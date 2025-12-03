@@ -11,11 +11,11 @@ on:
   workflow_dispatch:
 
 jobs:
-  trigger-netlify-build:
+  trigger-vercel-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Netlify Build Hook
+      - name: Trigger Vercel Deploy Hook
         run: |
-          # Mengirim sinyal POST ke Netlify untuk rebuild website
-          # URL rahasia ini diambil dari GitHub Secrets (baca panduan di bawah)
-          curl -X POST -d '{}' ${{ secrets.NETLIFY_BUILD_HOOK_URL }}
+          # Mengirim sinyal POST ke Vercel untuk rebuild website
+          # URL rahasia ini diambil dari GitHub Secrets bernama VERCEL_DEPLOY_HOOK_URL
+          curl -X POST ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
