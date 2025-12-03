@@ -1,36 +1,96 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 📂 DATASEA Archive (Private Repository)
 
-## Getting Started
+Platform arsip digital terintegrasi untuk komunitas Sains Data UTY. Website ini dibangun untuk memusatkan materi perkuliahan, jurnal riset, dan peralatan pendukung (tools/dataset) yang bersumber langsung dari **Google Drive**.
 
-First, run the development server:
+## 🚀 Tech Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+* **Framework:** [Next.js 14/15](https://nextjs.org/) (App Router)
+* **Styling:** [Tailwind CSS](https://tailwindcss.com/)
+* **Database/Storage:** Google Drive API (v3)
+* **Icons:** [Lucide React](https://lucide.dev/)
+* **Deployment:** Netlify
+* **Automation:** GitHub Actions (Cron Job)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🛠️ Cara Menjalankan di Lokal (Development)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1.  **Clone Repository** (jika belum):
+    ```bash
+    git clone [https://github.com/USERNAME/datasea-archive.git](https://github.com/USERNAME/datasea-archive.git)
+    cd datasea-archive
+    ```
 
-## Learn More
+2.  **Install Dependencies:**
+    ```bash
+    npm install
+    ```
 
-To learn more about Next.js, take a look at the following resources:
+3.  **Setup Environment Variables:**
+    Buat file `.env.local` di root folder. **JANGAN COMMIT FILE INI KE GITHUB!**
+    Isi dengan kredensial berikut (Minta akses ke Admin Utama jika hilang):
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+    ```env
+    # Service Account Google Cloud
+    GOOGLE_CLIENT_EMAIL=nama-service-account@project-id.iam.gserviceaccount.com
+    GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nIsi_Key_Panjang_Disini...\n-----END PRIVATE KEY-----\n"
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+    # ID Folder Google Drive
+    GOOGLE_DRIVE_MATERI_ID=1xxxxxxxxxxxxxxxxxxxxxxx
+    GOOGLE_DRIVE_JURNAL_ID=1xxxxxxxxxxxxxxxxxxxxxxx
+    GOOGLE_DRIVE_PERALATAN_ID=1xxxxxxxxxxxxxxxxxxxxxxx
+    ```
 
-## Deploy on Vercel
+4.  **Jalankan Server:**
+    ```bash
+    npm run dev
+    ```
+    Buka [http://localhost:3000](http://localhost:3000) di browser.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🧠 Arsitektur & Logika Unik
+
+Website ini menggunakan sistem **Smart Caching** untuk menghindari limit API Google Drive dan mempercepat loading.
+
+### 1. Mode Update (Caching Strategy)
+Logika ini diatur di file `lib/googleDrive.ts`:
+
+* **Mode Development (Laptop):**
+    * Cache time: **1 detik**.
+    * Perubahan di Google Drive akan muncul hampir instan saat refresh.
+    * Log Terminal: `🚧 [DEV - LAPTOP] Deep Scanning...`
+
+* **Mode Production (Netlify):**
+    * Cache time: **86400 detik (24 Jam)**.
+    * Website **TIDAK AKAN** menghubungi Google Drive saat user berkunjung (Sangat Cepat & Aman).
+    * Update data hanya terjadi saat proses *Build/Revalidate* otomatis.
+    * Log Build: `🔄 [PROD - NETLIFY] Scheduled Deep Scan...`
+
+### 2. Otomatisasi Update (Jam 03.00 WIB)
+Agar data di website tetap *fresh* tanpa perlu deploy manual, sistem menggunakan **GitHub Actions**:
+
+1.  File `.github/workflows/daily-update.yml` berjalan setiap jam **03.00 WIB**.
+2.  Script tersebut mengirim perintah ("Trigger") ke **Netlify Build Hook**.
+3.  Netlify melakukan *Rebuild* ulang website.
+4.  Data baru dari Google Drive diambil dan disimpan sebagai Cache statis selama 24 jam ke depan.
+
+---
+
+## 📂 Struktur Folder Google Drive
+
+Agar sistem otomatis mendeteksi kategori, folder di Google Drive **WAJIB** mengikuti struktur ini:
+
+**Materi (`GOOGLE_DRIVE_MATERI_ID`):**
+```text
+ROOT
+ ├── 2025 (Tahun Angkatan)
+ │    ├── Data Mining (Nama Matkul)
+ │    │    ├── Materi 1.pdf
+ │    │    └── Slide.pptx
+ │    ├── UTS
+ │    │    └── Soal UTS Aljabar.pdf
+ │    └── UAS
+ │         └── Soal UAS Statistika.pdf
+ ├── 2024
+ └── ...

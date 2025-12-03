@@ -1,0 +1,21 @@
+name: Update Website Harian (03.00 WIB)
+
+on:
+  schedule:
+    # Cron Job menggunakan waktu UTC.
+    # Jam 03.00 WIB = Jam 20.00 UTC (hari sebelumnya).
+    # Format: 'Menit Jam * * *'
+    - cron: '0 20 * * *'
+  
+  # Agar bisa dijalankan manual lewat tombol di GitHub (untuk tes)
+  workflow_dispatch:
+
+jobs:
+  trigger-netlify-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Netlify Build Hook
+        run: |
+          # Mengirim sinyal POST ke Netlify untuk rebuild website
+          # URL rahasia ini diambil dari GitHub Secrets (baca panduan di bawah)
+          curl -X POST -d '{}' ${{ secrets.NETLIFY_BUILD_HOOK_URL }}
