@@ -108,13 +108,13 @@ export default function Footer() {
                   </li>
                   <li>
                     <a href="https://uty.ac.id" target="_blank" rel="noopener noreferrer" className="hover:text-white flex items-center gap-2 group">
-                      <ExternalLink size={14} className="text-blue-400 group-hover:text-white transition-colors" /> <span className="truncate">Web UTY</span>
+                      <ExternalLink size={14} className="text-blue-400 group-hover:text-white transition-colors" /> <span className="truncate">Universitas Teknologi Yogyakarta</span>
                     </a>
                   </li>
                   <li>
                     {/* LINK KOSONG -> ARAH KE 404 */}
                     <a href="/404" className="hover:text-white flex items-center gap-2 group">
-                      <ExternalLink size={14} className="text-blue-400 group-hover:text-white transition-colors" /> <span className="truncate">Web Resmi</span>
+                      <ExternalLink size={14} className="text-blue-400 group-hover:text-white transition-colors" /> <span className="truncate">Datasea</span>
                     </a>
                   </li>
                 </ul>

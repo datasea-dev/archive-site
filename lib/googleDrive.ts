@@ -24,7 +24,7 @@ export interface DriveFile {
   source: "Materi" | "Jurnal" | "Peralatan";
 }
 
-// --- FUNGSI SCANNER ---
+// --- FUNGSI SCANNER GENERIK ---
 async function scanDriveFolder(rootId: string, sourceLabel: "Materi" | "Jurnal" | "Peralatan") {
   if (!rootId) return [];
   const isDev = process.env.NODE_ENV === 'development';
@@ -44,50 +44,47 @@ async function scanDriveFolder(rootId: string, sourceLabel: "Materi" | "Jurnal" 
         const name = item.name || "Tanpa Nama";
         const isFolder = item.mimeType === 'application/vnd.google-apps.folder';
 
+        // --- DETEKSI KATA KUNCI (REGEX) ---
+        // \b artinya "Word Boundary" (Batas Kata)
+        // Jadi "UAS" match, tapi "Evaluasi" tidak match.
+        const isUTS = /\bUTS\b/i.test(name);
+        const isUAS = /\bUAS\b/i.test(name);
+        const isSemester = /semester|smt|sem\s|ganjil|genap/i.test(name);
+        const isRomanOrNumber = /^([IVX]+|\d)$/i.test(name); // Deteksi folder "1", "I", "2"
+
         if (isFolder && item.id) {
-          // --- LOGIKA DETEKSI BARU YANG LEBIH PINTAR ---
           let nextSemester = currentSemester;
           let nextSubject = currentSubject;
 
-          const upperName = name.toUpperCase().trim();
-
-          // Regex: Mendeteksi "Semester", "Sem", "Smt" (tanpa peduli spasi)
-          const isSemesterKeyword = /(semester|smt|sem|ganjil|genap)/i.test(name);
-          
-          // Regex: Mendeteksi angka romawi (I, II, III...) atau angka (1, 2) KHUSUS di level Semester
-          const isRomanOrNumber = /^([IVX]+|\d)$/i.test(name);
-
-          // LEVEL 1: Kita berada di dalam Folder Tahun (currentSemester masih "Semua Semester")
+          // LEVEL 1: Di dalam Folder Tahun
           if (currentSemester === "Semua Semester") {
-             // Jika nama folder mengandung "Semester" ATAU cuma angka/romawi (1, 2, I, II)
-             // Maka kita anggap ini ADALAH folder Semester.
-             if (isSemesterKeyword || isRomanOrNumber) {
+             if (isSemester || isRomanOrNumber) {
                 nextSemester = name; 
-                if (isDev) console.log(`   📂 Semester Detected: ${name}`);
-             } 
-             // Jika folder khusus UTS/UAS, jangan jadikan subject
-             else if (upperName.includes("UTS") || upperName.includes("UAS")) {
-                // Pass
-             }
-             // Sisanya dianggap Nama Mata Kuliah
-             else {
+             } else if (!isUTS && !isUAS) {
+                // Jika bukan folder UTS/UAS, berarti ini nama Matkul
                 nextSubject = name;
              }
           } 
-          // LEVEL 2: Kita sudah di dalam Semester
+          // LEVEL 2: Di dalam Folder Semester
           else {
-             if (!upperName.includes("UTS") && !upperName.includes("UAS")) {
+             if (!isUTS && !isUAS) {
                 nextSubject = name; // Ini pasti Matkul
              }
           }
 
           return await scanRecursive(item.id, yearName, nextSubject, nextSemester);
         } else {
-          // FILE FOUND
+          // FILE DETECTED
           let category = "Umum";
           if (sourceLabel === "Materi") category = "Mata Kuliah"; 
-          if (name.toUpperCase().includes("UTS")) category = "UTS";
-          if (name.toUpperCase().includes("UAS")) category = "UAS";
+          
+          // Deteksi kategori file berdasarkan nama file atau folder parent
+          // Cek nama file dulu
+          if (isUTS) category = "UTS";
+          else if (isUAS) category = "UAS";
+          // Jika nama file bersih, cek nama folder parent (subject)
+          else if (/\bUTS\b/i.test(currentSubject)) category = "UTS";
+          else if (/\bUAS\b/i.test(currentSubject)) category = "UAS";
           
           return [{
             id: item.id || "",
@@ -113,7 +110,6 @@ async function scanDriveFolder(rootId: string, sourceLabel: "Materi" | "Jurnal" 
   try {
     const years = await getFoldersInFolder(rootId);
     const promises = years.map(async (yearFolder) => {
-      // Masuk ke folder tahun, set default semester ke "Semua Semester"
       return await scanRecursive(yearFolder.id || "", yearFolder.name || "Umum", "Umum", "Semua Semester");
     });
     const results = await Promise.all(promises);
