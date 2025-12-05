@@ -17,20 +17,20 @@ export interface DriveFile {
   type: "PDF" | "Folder" | "Excel" | "Image" | "Link";
   date: string;
   year: string;
+  semester: string; 
   category: string;
   subject: string;
   downloadLink: string;
-  source: "Materi" | "Jurnal" | "Peralatan"; // Penanda asal file
+  source: "Materi" | "Jurnal" | "Peralatan";
 }
 
-// --- FUNGSI SCANNER GENERIK (Bisa dipakai untuk Materi, Jurnal, Tools) ---
+// --- FUNGSI SCANNER ---
 async function scanDriveFolder(rootId: string, sourceLabel: "Materi" | "Jurnal" | "Peralatan") {
   if (!rootId) return [];
   const isDev = process.env.NODE_ENV === 'development';
   if (isDev) console.log(`🚧 [DEV] Scanning ${sourceLabel}...`);
 
-  // Helper scan recursive
-  const scanRecursive = async (folderId: string, yearName: string, currentSubject: string): Promise<DriveFile[]> => {
+  const scanRecursive = async (folderId: string, yearName: string, currentSubject: string, currentSemester: string): Promise<DriveFile[]> => {
     let results: DriveFile[] = [];
     try {
       const items = await drive.files.list({
@@ -45,16 +45,47 @@ async function scanDriveFolder(rootId: string, sourceLabel: "Materi" | "Jurnal" 
         const isFolder = item.mimeType === 'application/vnd.google-apps.folder';
 
         if (isFolder && item.id) {
-          let nextSubject = name;
-          // Logic khusus: Folder UTS/UAS/Semester tidak mengubah nama subject
-          if (name.toUpperCase().includes("UTS") || name.toUpperCase().includes("UAS") || name.toUpperCase().includes("SEMESTER")) {
-             nextSubject = currentSubject; 
+          // --- LOGIKA DETEKSI BARU YANG LEBIH PINTAR ---
+          let nextSemester = currentSemester;
+          let nextSubject = currentSubject;
+
+          const upperName = name.toUpperCase().trim();
+
+          // Regex: Mendeteksi "Semester", "Sem", "Smt" (tanpa peduli spasi)
+          const isSemesterKeyword = /(semester|smt|sem|ganjil|genap)/i.test(name);
+          
+          // Regex: Mendeteksi angka romawi (I, II, III...) atau angka (1, 2) KHUSUS di level Semester
+          const isRomanOrNumber = /^([IVX]+|\d)$/i.test(name);
+
+          // LEVEL 1: Kita berada di dalam Folder Tahun (currentSemester masih "Semua Semester")
+          if (currentSemester === "Semua Semester") {
+             // Jika nama folder mengandung "Semester" ATAU cuma angka/romawi (1, 2, I, II)
+             // Maka kita anggap ini ADALAH folder Semester.
+             if (isSemesterKeyword || isRomanOrNumber) {
+                nextSemester = name; 
+                if (isDev) console.log(`   📂 Semester Detected: ${name}`);
+             } 
+             // Jika folder khusus UTS/UAS, jangan jadikan subject
+             else if (upperName.includes("UTS") || upperName.includes("UAS")) {
+                // Pass
+             }
+             // Sisanya dianggap Nama Mata Kuliah
+             else {
+                nextSubject = name;
+             }
+          } 
+          // LEVEL 2: Kita sudah di dalam Semester
+          else {
+             if (!upperName.includes("UTS") && !upperName.includes("UAS")) {
+                nextSubject = name; // Ini pasti Matkul
+             }
           }
-          return await scanRecursive(item.id, yearName, nextSubject);
+
+          return await scanRecursive(item.id, yearName, nextSubject, nextSemester);
         } else {
-          // Logic Kategori
+          // FILE FOUND
           let category = "Umum";
-          if (sourceLabel === "Materi") category = "Mata Kuliah"; // Default materi
+          if (sourceLabel === "Materi") category = "Mata Kuliah"; 
           if (name.toUpperCase().includes("UTS")) category = "UTS";
           if (name.toUpperCase().includes("UAS")) category = "UAS";
           
@@ -64,6 +95,7 @@ async function scanDriveFolder(rootId: string, sourceLabel: "Materi" | "Jurnal" 
             type: determineFileType(item.mimeType),
             date: formatDate(item.createdTime),
             year: yearName,
+            semester: currentSemester,
             category: category,
             subject: currentSubject,
             downloadLink: item.webViewLink || "#",
@@ -79,39 +111,31 @@ async function scanDriveFolder(rootId: string, sourceLabel: "Materi" | "Jurnal" 
   };
 
   try {
-    // Start scanning from Root
     const years = await getFoldersInFolder(rootId);
     const promises = years.map(async (yearFolder) => {
-      return await scanRecursive(yearFolder.id || "", yearFolder.name || "Umum", "Umum");
+      // Masuk ke folder tahun, set default semester ke "Semua Semester"
+      return await scanRecursive(yearFolder.id || "", yearFolder.name || "Umum", "Umum", "Semua Semester");
     });
     const results = await Promise.all(promises);
     return results.flat();
   } catch (e) { return []; }
 }
 
-// --- CONFIG CACHE ---
 const CACHE_TIME = process.env.NODE_ENV === 'development' ? 1 : 86400;
 
-// 1. GET MATERI
 export const getMateriFiles = unstable_cache(
   async () => scanDriveFolder(process.env.GOOGLE_DRIVE_MATERI_ID || "", "Materi"),
   ['cache-materi'], { revalidate: CACHE_TIME, tags: ['materi'] }
 );
-
-// 2. GET JURNAL
 export const getJurnalFiles = unstable_cache(
   async () => scanDriveFolder(process.env.GOOGLE_DRIVE_JURNAL_ID || "", "Jurnal"),
   ['cache-jurnal'], { revalidate: CACHE_TIME, tags: ['jurnal'] }
 );
-
-// 3. GET PERALATAN
 export const getPeralatanFiles = unstable_cache(
   async () => scanDriveFolder(process.env.GOOGLE_DRIVE_PERALATAN_ID || "", "Peralatan"),
   ['cache-peralatan'], { revalidate: CACHE_TIME, tags: ['peralatan'] }
 );
 
-
-// --- HELPER LAIN ---
 async function getFoldersInFolder(parentId: string) {
   try {
     const res = await drive.files.list({
