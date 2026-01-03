@@ -7,10 +7,10 @@ interface Props {
 
 export default function UnderConstruction({ pageName }: Props) {
   return (
-    // PERBAIKAN: 
-    // 1. min-h-[60vh]: Saya kurangi sedikit agar vertikal centering lebih naik (tidak terlalu bawah).
-    // 2. pb-20 md:pb-32: Memberikan bantalan empuk di bawah agar tidak nabrak footer.
-    <div className="relative flex flex-col items-center justify-center min-h-[60vh] text-center p-4 pb-20 md:pb-20 overflow-hidden animate-in fade-in zoom-in duration-500">
+    // PERBAIKAN:
+    // 1. min-h-screen: Agar tinggi halaman memenuhi layar (footer terdorong ke bawah).
+    // 2. pt-24 md:pt-32: Padding atas agar ikon tidak tertutup Navbar.
+    <div className="relative flex flex-col items-center justify-center min-h-screen text-center px-4 pt-24 pb-20 md:pt-32 md:pb-20 overflow-hidden animate-in fade-in zoom-in duration-500">
       
       {/* Background Grid */}
       <div className="absolute inset-0 -z-10 h-full w-full bg-white bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:4rem_3rem]">

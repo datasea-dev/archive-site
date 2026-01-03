@@ -1,6 +1,7 @@
 import { google } from 'googleapis';
 import { unstable_cache } from 'next/cache';
 
+// --- KONFIGURASI AUTH ---
 const auth = new google.auth.GoogleAuth({
   credentials: {
     client_email: process.env.GOOGLE_CLIENT_EMAIL,
@@ -26,13 +27,22 @@ export interface DriveFile {
 
 // --- FUNGSI SCANNER GENERIK ---
 async function scanDriveFolder(rootId: string, sourceLabel: "Materi" | "Jurnal" | "Peralatan") {
-  if (!rootId) return [];
-  const isDev = process.env.NODE_ENV === 'development';
-  if (isDev) console.log(`🚧 [DEV] Scanning ${sourceLabel}...`);
+  if (!rootId) {
+    console.error(`❌ [ERROR] ID Folder untuk ${sourceLabel} tidak ditemukan di .env.local!`);
+    return [];
+  }
 
+  const isDev = process.env.NODE_ENV === 'development';
+  if (isDev) console.log(`🚀 [START] Memulai Scan ${sourceLabel} (Root ID: ${rootId})...`);
+
+  // --- LOGIKA REKURSIF (SCAN BERULANG KE DALAM) ---
   const scanRecursive = async (folderId: string, yearName: string, currentSubject: string, currentSemester: string): Promise<DriveFile[]> => {
     let results: DriveFile[] = [];
     try {
+      
+      // [DEBUG] 1. Lihat folder mana yang sedang dibuka
+      if (isDev) console.log(`🔍 Mengintip folder ID: ${folderId} | Sem: ${currentSemester} | Matkul: ${currentSubject}`);
+
       const items = await drive.files.list({
         q: `'${folderId}' in parents and trashed = false`,
         fields: 'files(id, name, mimeType, createdTime, webViewLink)',
@@ -40,13 +50,20 @@ async function scanDriveFolder(rootId: string, sourceLabel: "Materi" | "Jurnal" 
       });
       const files = items.data.files || [];
 
+      // [DEBUG] 2. Lihat hasil temuan
+      if (isDev) {
+        if (files.length > 0) {
+            console.log(`   ✅ Ditemukan ${files.length} item. Contoh: "${files[0].name}"`);
+        } else {
+            console.log(`   ⚠️ Folder ini KOSONG.`);
+        }
+      }
+
       const promises = files.map(async (item) => {
         const name = item.name || "Tanpa Nama";
         const isFolder = item.mimeType === 'application/vnd.google-apps.folder';
 
         // --- DETEKSI KATA KUNCI (REGEX) ---
-        // \b artinya "Word Boundary" (Batas Kata)
-        // Jadi "UAS" match, tapi "Evaluasi" tidak match.
         const isUTS = /\bUTS\b/i.test(name);
         const isUAS = /\bUAS\b/i.test(name);
         const isSemester = /semester|smt|sem\s|ganjil|genap/i.test(name);
@@ -78,11 +95,8 @@ async function scanDriveFolder(rootId: string, sourceLabel: "Materi" | "Jurnal" 
           let category = "Umum";
           if (sourceLabel === "Materi") category = "Mata Kuliah"; 
           
-          // Deteksi kategori file berdasarkan nama file atau folder parent
-          // Cek nama file dulu
           if (isUTS) category = "UTS";
           else if (isUAS) category = "UAS";
-          // Jika nama file bersih, cek nama folder parent (subject)
           else if (/\bUTS\b/i.test(currentSubject)) category = "UTS";
           else if (/\bUAS\b/i.test(currentSubject)) category = "UAS";
           
@@ -103,20 +117,35 @@ async function scanDriveFolder(rootId: string, sourceLabel: "Materi" | "Jurnal" 
 
       const nested = await Promise.all(promises);
       results = nested.flat();
-    } catch (e) { console.error(`Error scanning ${folderId}:`, e); }
+    } catch (e) { 
+        console.error(`❌ Error saat scan folder ${folderId}:`, e); 
+    }
     return results;
   };
 
   try {
+    // Cari folder "Tahun" dulu (Angkatan 2023, 2024, dst)
     const years = await getFoldersInFolder(rootId);
+    
+    // [DEBUG] Cek apakah Folder Tahun ketemu
+    if (years.length === 0) {
+        console.log(`⚠️ PERINGATAN: Tidak ada folder 'Tahun' ditemukan di dalam Root Folder ${sourceLabel}.`);
+        console.log(`   Pastikan ID Folder benar dan Bot sudah dijadikan Viewer.`);
+    }
+
     const promises = years.map(async (yearFolder) => {
+      // Masuk ke setiap folder tahun
       return await scanRecursive(yearFolder.id || "", yearFolder.name || "Umum", "Umum", "Semua Semester");
     });
     const results = await Promise.all(promises);
     return results.flat();
-  } catch (e) { return []; }
+  } catch (e) { 
+      console.error("Critical Error:", e);
+      return []; 
+  }
 }
 
+// --- CONFIG CACHE ---
 const CACHE_TIME = process.env.NODE_ENV === 'development' ? 1 : 86400;
 
 export const getMateriFiles = unstable_cache(
@@ -132,6 +161,7 @@ export const getPeralatanFiles = unstable_cache(
   ['cache-peralatan'], { revalidate: CACHE_TIME, tags: ['peralatan'] }
 );
 
+// --- HELPER FUNCTION ---
 async function getFoldersInFolder(parentId: string) {
   try {
     const res = await drive.files.list({
@@ -140,7 +170,10 @@ async function getFoldersInFolder(parentId: string) {
       pageSize: 100,
     });
     return res.data.files || [];
-  } catch (e) { return []; }
+  } catch (e) { 
+    console.error(`Gagal mengambil folder tahun dari ID ${parentId}`, e);
+    return []; 
+  }
 }
 
 function determineFileType(mime?: string | null): any {
