@@ -105,7 +105,10 @@ export default function Home() {
   };
 
   return (
-    <div className="relative flex flex-col items-center justify-center min-h-[85vh] text-center space-y-10 md:space-y-16 py-8 md:py-12 overflow-hidden" 
+    // PERBAIKAN: 
+    // 1. min-h-screen: Agar tinggi minimal satu layar penuh.
+    // 2. pt-24 md:pt-32: Padding atas agar konten turun melewati Navbar.
+    <div className="relative flex flex-col items-center justify-center min-h-screen text-center space-y-10 md:space-y-16 pt-24 pb-12 md:pt-32 md:pb-20 overflow-hidden" 
       onClick={() => setIsFocused(false)} 
     >
       
@@ -183,9 +186,9 @@ export default function Home() {
                       >
                         {/* Ikon Berdasarkan Sumber (Materi/Jurnal/Tools) */}
                         <div className={`p-2 rounded-lg transition-colors shrink-0 ${
-                            file.source === "Materi" ? "bg-blue-100 text-blue-600 group-hover:bg-blue-600 group-hover:text-white" :
-                            file.source === "Jurnal" ? "bg-purple-100 text-purple-600 group-hover:bg-purple-600 group-hover:text-white" :
-                            "bg-orange-100 text-orange-600 group-hover:bg-orange-600 group-hover:text-white"
+                          file.source === "Materi" ? "bg-blue-100 text-blue-600 group-hover:bg-blue-600 group-hover:text-white" :
+                          file.source === "Jurnal" ? "bg-purple-100 text-purple-600 group-hover:bg-purple-600 group-hover:text-white" :
+                          "bg-orange-100 text-orange-600 group-hover:bg-orange-600 group-hover:text-white"
                         }`}>
                           {file.source === "Materi" ? <BookOpen size={16} /> : 
                            file.source === "Jurnal" ? <Database size={16} /> : 
