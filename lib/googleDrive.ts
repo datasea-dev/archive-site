@@ -1,11 +1,15 @@
 import { google } from 'googleapis';
 import { unstable_cache } from 'next/cache';
 
+const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+
 // --- KONFIGURASI AUTH ---
 const auth = new google.auth.GoogleAuth({
   credentials: {
     client_email: process.env.GOOGLE_CLIENT_EMAIL,
-    private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    private_key: privateKey
+      ? privateKey.replace(/\\n/g, '\n').replace(/"/g, '') 
+      : undefined,
   },
   scopes: ['https://www.googleapis.com/auth/drive.metadata.readonly'],
 });

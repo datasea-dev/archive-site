@@ -9,6 +9,14 @@ import { Menu, X, GitBranch } from "lucide-react";
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
+
+  // --- LOGIKA BARU: SEMBUNYI DI ADMIN ---
+  // Jika URL diawali dengan "/admin", stop render komponen ini.
+  if (pathname && pathname.startsWith("/admin")) {
+    return null;
+  }
+  // --------------------------------------
+
   const isHomePage = pathname === "/";
 
   return (
