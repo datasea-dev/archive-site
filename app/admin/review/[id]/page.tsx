@@ -6,18 +6,17 @@ import { db } from "@/lib/firebase";
 import { doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
 import { ArrowLeft, Save, CheckCircle, XCircle, ExternalLink, Loader2, AlertTriangle, FileText } from "lucide-react";
 import Link from "next/link";
-// 1. Import CustomAlert
 import CustomAlert from "@/components/ui/CustomAlert"; 
+// 1. IMPORT PDF VIEWER KITA
+import PDFViewer from "@/components/ui/PDFViewer"; // Pastikan path ini benar
 
 export default function ReviewPage({ params }: { params: Promise<{ id: string }> }) {
-  // Unwrapping params untuk Next.js terbaru
   const { id } = use(params);
   
   const router = useRouter();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   
-  // State Form Edit
   const [formData, setFormData] = useState({
     judul: "",
     nama: "",
@@ -27,7 +26,6 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
     kategori: "Skripsi"
   });
 
-  // --- STATE ALERT CONFIG ---
   const [alertConfig, setAlertConfig] = useState({
     isOpen: false,
     title: "",
@@ -38,7 +36,6 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
     isSingleButton: false, 
   });
 
-  // 1. FETCH DATA DETAIL
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -76,7 +73,6 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
     fetchData();
   }, [id, router]);
 
-  // 2. LOGIC SIMPAN PERUBAHAN
   const handleSaveClick = () => { processSave(); };
 
   const processSave = async () => {
@@ -113,12 +109,12 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
     }
   };
 
-  // 3. LOGIC PUBLISH (DENGAN PROGRESS ALERT)
   const handlePublishClick = () => {
     setAlertConfig({
         isOpen: true,
         title: "Konfirmasi Publikasi",
-        message: "Sistem akan menambahkan watermark 'DATASEA' dan mengupload jurnal ini ke Google Drive Resmi. Lanjutkan?",
+        // UPDATE TEKS: Ubah Google Drive jadi Cloudflare R2
+        message: "Sistem akan mengarsipkan jurnal ini ke penyimpanan Cloudflare R2 Resmi DATASEA. Lanjutkan?",
         type: "success", 
         isSingleButton: false,
         isLoading: false,
@@ -127,12 +123,12 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
   };
 
   const processPublish = async () => {
-    // A. UBAH TAMPILAN ALERT JADI LOADING
     setAlertConfig(prev => ({ 
         ...prev, 
         isLoading: true,
-        title: "Sedang Memproses...", // Judul berubah
-        message: "Mohon tunggu. Sistem sedang memberi watermark dan mengupload ke Google Drive. Jangan tutup halaman ini." // Pesan berubah
+        title: "Sedang Memproses...", 
+        // UPDATE TEKS
+        message: "Mohon tunggu. Sistem sedang memindahkan file ke arsip publik. Jangan tutup halaman ini." 
     }));
 
     try {
@@ -145,11 +141,10 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
         const result = await res.json();
 
         if (result.success) {
-            // B. SUKSES: UBAH ALERT JADI SUKSES
             setAlertConfig({
                 isOpen: true,
                 title: "Publikasi Berhasil! 🎉",
-                message: "Jurnal telah berhasil diterbitkan ke Google Drive dan status diperbarui.",
+                message: "Jurnal telah berhasil diterbitkan ke Arsip Resmi dan status diperbarui.",
                 type: "success",
                 isSingleButton: true, 
                 isLoading: false,
@@ -160,7 +155,6 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
         }
 
     } catch (error: any) {
-        // C. GAGAL: UBAH ALERT JADI ERROR
         setAlertConfig({
             isOpen: true,
             title: "Gagal Mempublikasikan",
@@ -173,7 +167,6 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
     }
   };
 
-  // 4. LOGIC REJECT
   const handleRejectClick = () => {
     setAlertConfig({
         isOpen: true,
@@ -190,6 +183,7 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
     setAlertConfig(prev => ({ ...prev, isLoading: true, title: "Menghapus Data...", message: "Sedang menghapus data dari database..." }));
     
     try {
+        // TODO Nanti: Kita juga harus hapus file mentahnya di R2 (akan dibuat di tahap selanjutnya)
         await deleteDoc(doc(db, "submissions", id));
         
         setAlertConfig({
@@ -256,30 +250,24 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
       <div className="flex-1 flex flex-col md:flex-row h-[calc(100vh-73px)] overflow-hidden">
         
         {/* KIRI: PDF PREVIEW */}
-        <div className="w-full md:w-1/2 bg-gray-800 h-full relative border-r border-gray-300">
-            {data?.fileURL ? (
-                <iframe 
-                    src={data.fileURL} 
-                    className="w-full h-full"
-                    title="PDF Preview"
-                />
+        <div className="w-full md:w-1/2 bg-gray-800 h-full relative border-r border-gray-300 p-2">
+            {/* 2. GANTI IFRAME DENGAN ADOBE VIEWER KITA */}
+            {data?.fileKey ? (
+                <div className="w-full h-full rounded-lg overflow-hidden bg-white">
+                  <PDFViewer 
+                    type="jurnal" 
+                    fileIdOrKey={data.fileKey} 
+                    fileName={data.judul} 
+                  />
+                </div>
             ) : (
                 <div className="flex items-center justify-center h-full text-white">
-                    <p>File tidak ditemukan.</p>
+                    <p>File tidak ditemukan atau format key salah.</p>
                 </div>
             )}
-            
-            <a 
-                href={data?.fileURL} 
-                target="_blank" 
-                rel="noreferrer"
-                className="absolute bottom-6 right-6 bg-black/70 text-white px-4 py-2 rounded-full text-sm hover:bg-black flex items-center gap-2 backdrop-blur-sm"
-            >
-                <ExternalLink size={14} /> Buka Full PDF
-            </a>
         </div>
 
-        {/* KANAN: FORM DATA */}
+        {/* KANAN: FORM DATA (Kodenya tetap sama persis seperti buatan Mas Hartono) */}
         <div className="w-full md:w-1/2 bg-white h-full overflow-y-auto p-6 md:p-8">
             <div className="max-w-xl mx-auto space-y-6">
                 
@@ -291,7 +279,6 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
                     </div>
                 </div>
 
-                {/* Form Inputs */}
                 <div className="space-y-4">
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">Judul Jurnal</label>

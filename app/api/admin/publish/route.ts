@@ -1,117 +1,72 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { PDFDocument, rgb, degrees } from "pdf-lib";
-import { google } from "googleapis";
-import { Readable } from "stream";
-import { UTApi } from "uploadthing/server";
+import { db } from "@/lib/firebase"; 
+import { CopyObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { r2Client } from "@/lib/r2"; 
 
-const utapi = new UTApi();
-
-// --- UPDATE: SETUP OAUTH 2.0 (INI KUNCI SUKSESNYA) ---
-// Kita tidak pakai GoogleAuth lagi, tapi pakai OAuth2
-const oauth2Client = new google.auth.OAuth2(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  "https://developers.google.com/oauthplayground"
-);
-
-// Masukkan Refresh Token agar server bisa login otomatis
-oauth2Client.setCredentials({
-  refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
-});
-
-// Inisialisasi Drive dengan Client OAuth yang baru
-const drive = google.drive({ version: "v3", auth: oauth2Client });
-const FOLDER_ID = process.env.GOOGLE_DRIVE_JURNAL_ID;
-
-export async function POST(req: Request) {
+export async function POST(request: Request) {
   try {
-    const { id } = await req.json();
+    const { id } = await request.json();
+    
+    if (!id) {
+      throw new Error("ID Jurnal tidak ditemukan.");
+    }
 
-    if (!id) return NextResponse.json({ success: false, message: "ID Kosong" }, { status: 400 });
-
-    // 1. AMBIL DATA DARI FIREBASE
+    // 1. Ambil data jurnal saat ini dari Firestore
     const docRef = doc(db, "submissions", id);
     const docSnap = await getDoc(docRef);
 
-    if (!docSnap.exists()) return NextResponse.json({ success: false, message: "Data 404" }, { status: 404 });
-    const data = docSnap.data();
-
-    if (!data.fileURL) throw new Error("URL File tidak ditemukan");
+    if (!docSnap.exists()) {
+      throw new Error("Data pengajuan tidak ditemukan di database.");
+    }
     
-    // 2. DOWNLOAD PDF (Dari UploadThing)
-    const cleanJudul = data.judul.replace(/[^a-zA-Z0-9 ]/g, "").substring(0, 50);
-    const fileName = `${data.nama} - ${cleanJudul}.pdf`;
+    const data = docSnap.data();
+    const oldKey = data.fileKey; 
 
-    const pdfBytes = await fetch(data.fileURL).then((res) => res.arrayBuffer());
-
-    // 3. PROSES WATERMARK
-    const pdfDoc = await PDFDocument.load(pdfBytes);
-    const pages = pdfDoc.getPages();
-    const { width, height } = pages[0].getSize();
-
-    pages.forEach((page) => {
-      page.drawText('Archived by DATASEA UTY', {
-        x: 50, y: 30, size: 10,
-        color: rgb(0.2, 0.2, 0.8), opacity: 0.6,
-      });
-      page.drawText('DATASEA ARCHIVE', {
-        x: width / 2 - 150, y: height / 2, size: 35,
-        color: rgb(0.5, 0.5, 0.5), opacity: 0.2,
-        rotate: degrees(45),
-      });
-    });
-
-    const modifiedPdfBytes = await pdfDoc.save();
-
-    // 4. UPLOAD KE DRIVE (METODE BARU)
-    const bufferStream = new Readable();
-    bufferStream.push(Buffer.from(modifiedPdfBytes));
-    bufferStream.push(null);
-
-    const fileMetadata = {
-      name: fileName,
-      parents: [FOLDER_ID || ""],
-    };
-
-    const media = {
-      mimeType: "application/pdf",
-      body: bufferStream,
-    };
-
-    // Upload menggunakan 'drive' yang sudah di-auth pakai OAuth
-    const driveResponse = await drive.files.create({
-      requestBody: fileMetadata,
-      media: media,
-      fields: "id, webViewLink",
-    });
-
-    const driveLink = driveResponse.data.webViewLink;
-    const driveFileId = driveResponse.data.id;
-
-    // 5. BERSIH-BERSIH UPLOADTHING
-    if (data.fileKey) {
-        try {
-            await utapi.deleteFiles(data.fileKey);
-        } catch (e) {
-            console.error("Cleanup warning:", e);
-        }
+    // Validasi apakah file masih di folder temporary
+    if (!oldKey || !oldKey.startsWith("temp-review/")) {
+      throw new Error("File tidak valid atau sudah pernah dipublikasikan.");
     }
 
-    // 6. UPDATE DATABASE
+    // 2. Siapkan path baru untuk folder Arsip Publik
+    // Contoh: temp-review/123-jurnal.pdf -> arsip-publik/123-jurnal.pdf
+    const fileName = oldKey.replace("temp-review/", ""); 
+    const newKey = `arsip-publik/${fileName}`;
+
+    // 3. Pindahkan file di Cloudflare R2 (Proses Copy lalu Delete)
+    // A. Gandakan file ke folder arsip-publik
+    await r2Client.send(new CopyObjectCommand({
+      Bucket: process.env.R2_BUCKET_NAME,
+      // Syarat AWS SDK: CopySource formatnya harus "nama-bucket/path-file"
+      CopySource: encodeURI(`${process.env.R2_BUCKET_NAME}/${oldKey}`), 
+      Key: newKey,
+    }));
+
+    // B. Hapus file lama di folder temp-review agar hemat kuota
+    await r2Client.send(new DeleteObjectCommand({
+      Bucket: process.env.R2_BUCKET_NAME,
+      Key: oldKey,
+    }));
+
+    // 4. Update data di Firestore
+    const publicBaseUrl = "https://archive.datasea.my.id/api/view?key="; // URL API Viewer
+    
     await updateDoc(docRef, {
-      status: "PUBLISHED",
-      downloadLink: driveLink,
-      driveFileId: driveFileId,
-      originalFileDeleted: true,
-      publishedAt: new Date().toISOString(),
+      status: "PUBLISHED",      // Ubah status agar hilang dari antrean admin
+      fileKey: newKey,          // Update lokasi file terbaru
+      fileURL: `${publicBaseUrl}${newKey}` // Update link untuk diakses publik
     });
 
-    return NextResponse.json({ success: true, driveLink });
+    return NextResponse.json({ 
+      success: true, 
+      message: "Jurnal berhasil dipindahkan dan dipublikasikan!" 
+    });
 
   } catch (error: any) {
-    console.error("Publish Error Detail:", error);
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+    console.error("Gagal Publish R2:", error);
+    return NextResponse.json({ 
+      success: false, 
+      message: error.message || "Terjadi kesalahan pada server." 
+    }, { status: 500 });
   }
 }

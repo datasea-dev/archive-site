@@ -62,7 +62,7 @@ export default function Navbar() {
             {/* Indikator Versi (Git Style) - Responsif HP & Laptop */}
             <div className="flex items-center gap-1.5 px-2.5 py-1 md:px-3 md:py-1.5 rounded-full bg-gray-50 border border-gray-200 text-[10px] md:text-xs font-medium text-gray-500 hover:text-datasea-main hover:border-datasea-main/30 transition-colors cursor-default">
               <GitBranch className="w-3 h-3 md:w-3.5 md:h-3.5" />
-              <span>v1.0.0</span>
+              <span>v1.1.0</span>
               <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse ml-0.5 md:ml-1"></span>
             </div>
 

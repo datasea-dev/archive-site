@@ -185,7 +185,7 @@ export default function AdminDashboard() {
             Halo, {adminName} 👋
           </h1>
           <p className="text-gray-500 flex items-center gap-2 mt-1">
-            <Clock size={14} /> Selamat datang di panel admin. Sesi aktif 10 menit.
+            <Clock size={14} /> Selamat datang di panel admin pengelolaan jurnal
           </p>
         </div>
 
