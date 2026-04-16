@@ -4,8 +4,9 @@ import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import FileCard from "@/components/ui/FileCard";
 import { Search, Calendar, Filter, FolderGit2, Loader2, AlertCircle, ChevronLeft, ChevronRight, Layers, X } from "lucide-react";
-// Import PDFViewer
-import PDFViewer from "@/components/ui/PDFViewer";
+
+// 1. IMPORT KOMPONEN BARU
+import DocumentViewer from "@/components/ui/DocumentViewer";
 
 interface MateriFile {
   id: string;
@@ -37,8 +38,8 @@ function MateriContent() {
   const [activeFilter, setActiveFilter] = useState("Semua");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // 1. STATE PDF VIEWER (SUDAH BENAR PAKAI ID)
-  const [selectedPdf, setSelectedPdf] = useState<{ id: string; title: string } | null>(null);
+  // 2. UBAH NAMA STATE JADI selectedDoc KARENA BUKAN CUMA PDF LAGI
+  const [selectedDoc, setSelectedDoc] = useState<{ id: string; title: string } | null>(null);
 
   const getFileType = (filename: string) => {
     const lower = filename.toLowerCase();
@@ -171,14 +172,15 @@ function MateriContent() {
     }
   };
 
-  // --- 2. PERBAIKAN FUNGSI KLIK FILE ---
+  // --- 3. PERBAIKAN LOGIKA KLIK FILE ---
   const handleFileClick = (file: MateriFile) => {
     const realType = getFileType(file.title);
 
-    if (realType === "PDF") {
-      // ✅ Cukup simpan ID-nya saja, jangan simpan 'url' lagi
-      setSelectedPdf({ id: file.id, title: file.title });
+    // Sekarang PPT dan DOC juga di-trigger ke Modal DocumentViewer
+    if (realType === "PDF" || realType === "PPT" || realType === "DOC") {
+      setSelectedDoc({ id: file.id, title: file.title });
     } else {
+      // Format XLS, ZIP, atau Source Code tetap di-download/buka tab baru
       window.open(file.downloadLink, "_blank");
     }
   };
@@ -186,36 +188,35 @@ function MateriContent() {
   return (
     <div className="min-h-screen pt-20 md:pt-28 pb-12 md:pb-20 animate-in fade-in duration-700 px-4 md:px-8 relative">
       
-      {/* --- MODAL PDF VIEWER --- */}
-      {selectedPdf && (
+      {/* --- MODAL DOCUMENT VIEWER --- */}
+      {selectedDoc && (
         <div className="fixed inset-0 z-[99999] flex flex-col bg-gray-100 animate-in fade-in duration-200">
             <div className="flex items-center justify-between px-3 md:px-4 py-3 bg-white border-b shadow-sm shrink-0 z-10">
                <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
                   <button 
-                    onClick={() => setSelectedPdf(null)} 
+                    onClick={() => setSelectedDoc(null)} 
                     className="p-2 -ml-2 hover:bg-gray-100 rounded-full text-gray-600 transition-colors shrink-0"
                     title="Kembali"
                   >
                      <ChevronLeft size={24} className="md:w-7 md:h-7" />
                   </button>
                   <h3 className="font-semibold text-gray-800 truncate text-sm md:text-lg flex-1 min-w-0">
-                    {selectedPdf.title}
+                    {selectedDoc.title}
                   </h3>
                </div>
                <button 
-                 onClick={() => setSelectedPdf(null)} 
+                 onClick={() => setSelectedDoc(null)} 
                  className="p-2 ml-2 hover:bg-red-50 hover:text-red-600 rounded-full text-gray-500 transition-colors shrink-0"
                >
                   <X size={20} className="md:w-6 md:h-6" />
                </button>
             </div>
 
-            {/* --- 3. PERBAIKAN PEMANGGILAN PDFVIEWER --- */}
             <div className="flex-1 w-full h-full overflow-hidden relative">
-               <PDFViewer 
-                 type="materi"               // ✅ Tipe materi (Drive)
-                 fileIdOrKey={selectedPdf.id}  // ✅ Gunakan .id
-                 fileName={selectedPdf.title} 
+               <DocumentViewer 
+                 type="materi"               
+                 fileIdOrKey={selectedDoc.id}  
+                 fileName={selectedDoc.title} 
                />
             </div>
         </div>

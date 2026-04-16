@@ -22,19 +22,30 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'File tidak ada di dalam Bucket R2' }, { status: 404 });
     }
 
-
     const byteArray = await response.Body.transformToByteArray();
     const fileBuffer = Buffer.from(byteArray);
 
+    // 1. DINAMIS: Ambil tipe konten asli dari Cloudflare R2 (jaga-jaga jika bukan PDF)
+    const contentType = response.ContentType || 'application/pdf';
+
+    // 2. NAMA FILE: Ambil nama file dari ujung Key agar rapi saat didownload/ditampilkan
+    const fileName = key.split('/').pop() || 'jurnal-datasea.pdf';
+
     const headers = new Headers();
-    headers.set('Content-Type', 'application/pdf');
-    headers.set('Content-Disposition', 'inline'); 
+    headers.set('Content-Type', contentType);
+    
+    // 3. INLINE: Memaksa browser/HP untuk "Membaca", bukan "Mendownload"
+    headers.set('Content-Disposition', `inline; filename="${fileName}"`); 
     headers.set('Cache-Control', 'public, max-age=31536000, immutable'); 
+
+    // 4. CORS: Mencegah error "Cross-Origin" saat diakses via Iframe atau Adobe SDK
+    headers.set('Access-Control-Allow-Origin', '*');
+    headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
 
     return new NextResponse(fileBuffer, { headers });
 
   } catch (error) {
-    console.error("Gagal mengambil file PDF:", error);
-    return NextResponse.json({ error: 'Gagal memuat PDF dari server' }, { status: 500 });
+    console.error("Gagal mengambil file dari R2:", error);
+    return NextResponse.json({ error: 'Gagal memuat file dari server' }, { status: 500 });
   }
 }

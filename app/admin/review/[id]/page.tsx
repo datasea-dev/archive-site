@@ -7,8 +7,9 @@ import { doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
 import { ArrowLeft, Save, CheckCircle, XCircle, ExternalLink, Loader2, AlertTriangle, FileText } from "lucide-react";
 import Link from "next/link";
 import CustomAlert from "@/components/ui/CustomAlert"; 
-// 1. IMPORT PDF VIEWER KITA
-import PDFViewer from "@/components/ui/PDFViewer"; // Pastikan path ini benar
+
+// 1. UBAH IMPORT: Sesuaikan dengan nama komponen Universal Viewer kita yang baru
+import DocumentViewer from "@/components/ui/DocumentViewer"; 
 
 export default function ReviewPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -80,7 +81,7 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
         const docRef = doc(db, "submissions", id);
         await updateDoc(docRef, {
             judul: formData.judul,
-            nama: formData.nama,
+            nama: formData.nim,
             nim: formData.nim,
             abstrak: formData.abstrak,
             tahun: formData.tahun,
@@ -113,8 +114,7 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
     setAlertConfig({
         isOpen: true,
         title: "Konfirmasi Publikasi",
-        // UPDATE TEKS: Ubah Google Drive jadi Cloudflare R2
-        message: "Sistem akan mengarsipkan jurnal ini ke penyimpanan Cloudflare R2 Resmi DATASEA. Lanjutkan?",
+        message: "Sistem akan mengarsipkan jurnal ini ke penyimpanan databse Resmi Komunitas Datasea Archive. Lanjutkan?",
         type: "success", 
         isSingleButton: false,
         isLoading: false,
@@ -127,7 +127,6 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
         ...prev, 
         isLoading: true,
         title: "Sedang Memproses...", 
-        // UPDATE TEKS
         message: "Mohon tunggu. Sistem sedang memindahkan file ke arsip publik. Jangan tutup halaman ini." 
     }));
 
@@ -183,7 +182,6 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
     setAlertConfig(prev => ({ ...prev, isLoading: true, title: "Menghapus Data...", message: "Sedang menghapus data dari database..." }));
     
     try {
-        // TODO Nanti: Kita juga harus hapus file mentahnya di R2 (akan dibuat di tahap selanjutnya)
         await deleteDoc(doc(db, "submissions", id));
         
         setAlertConfig({
@@ -250,11 +248,11 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
       <div className="flex-1 flex flex-col md:flex-row h-[calc(100vh-73px)] overflow-hidden">
         
         {/* KIRI: PDF PREVIEW */}
-        <div className="w-full md:w-1/2 bg-gray-800 h-full relative border-r border-gray-300 p-2">
-            {/* 2. GANTI IFRAME DENGAN ADOBE VIEWER KITA */}
+        <div className="w-full md:w-1/2 bg-gray-800 relative border-r border-gray-300 p-2" style={{ minHeight: 'calc(100vh - 73px)' }}>
             {data?.fileKey ? (
-                <div className="w-full h-full rounded-lg overflow-hidden bg-white">
-                  <PDFViewer 
+                <div className="absolute inset-2 bg-white rounded-lg overflow-hidden">
+                  {/* 2. UBAH PEMANGGILAN KOMPONEN: Gunakan DocumentViewer */}
+                  <DocumentViewer 
                     type="jurnal" 
                     fileIdOrKey={data.fileKey} 
                     fileName={data.judul} 
@@ -267,7 +265,7 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
             )}
         </div>
 
-        {/* KANAN: FORM DATA (Kodenya tetap sama persis seperti buatan Mas Hartono) */}
+        {/* KANAN: FORM DATA */}
         <div className="w-full md:w-1/2 bg-white h-full overflow-y-auto p-6 md:p-8">
             <div className="max-w-xl mx-auto space-y-6">
                 
@@ -331,7 +329,6 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
         </div>
       </div>
 
-      {/* --- KOMPONEN ALERT DINAMIS --- */}
       <CustomAlert
         isOpen={alertConfig.isOpen}
         onClose={() => setAlertConfig(prev => ({ ...prev, isOpen: false }))}

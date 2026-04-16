@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { ArrowRight, BookOpen, Database, Wrench, Search, ArrowUpRight, X, ChevronLeft } from "lucide-react";
 // Pastikan path ini benar
-import PDFViewer from "@/components/ui/PDFViewer";
+import PDFViewer from "@/components/ui/DocumentViewer";
 
 interface SearchResult {
   id: string;

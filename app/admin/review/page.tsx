@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, doc, updateDoc } from "firebase/firestore";
-import PDFViewer from "@/components/ui/PDFViewer"; // Sesuaikan path jika lokasi file PDFViewer Mas berbeda
+import PDFViewer from "@/components/ui/DocumentViewer"; // Sesuaikan path jika lokasi file PDFViewer Mas berbeda
 import { Loader2, CheckCircle, XCircle, FileText, User } from "lucide-react";
 
 // Struktur Data Jurnal dari Firebase

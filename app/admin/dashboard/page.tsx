@@ -360,10 +360,10 @@ export default function AdminDashboard() {
       {/* ALERT HAPUS DATA */}
       <CustomAlert
         isOpen={!!deleteTargetId} 
-        onClose={() => setDeleteTargetId(null)} // Tombol Batal
-        onConfirm={confirmDelete} // Tombol Ya: Eksekusi Hapus via API
+        onClose={() => setDeleteTargetId(null)}
+        onConfirm={confirmDelete}
         title="Hapus Data Permanen?"
-        message="Tindakan ini tidak dapat dibatalkan. Data jurnal dan file terkait (di Google Drive & UploadThing) akan dihapus total dari sistem."
+        message="Tindakan ini tidak dapat dibatalkan. Data jurnal dan file terkait pada database archive akan dihapus total dari sistem."
         type="danger" 
         loading={isDeleting}
       />

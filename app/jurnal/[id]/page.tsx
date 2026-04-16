@@ -5,7 +5,7 @@ import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { ArrowLeft, User, Calendar, BookOpen, Download, Loader2, X, ChevronLeft, FileText, Info } from "lucide-react";
 import Link from "next/link";
-import PDFViewer from "@/components/ui/PDFViewer";
+import PDFViewer from "@/components/ui/DocumentViewer";
 
 interface JurnalData {
   id: string;
