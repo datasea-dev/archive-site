@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: '/private/', // Contoh folder yang dilarang
+      disallow: ['/admin', '/api', '/private'], 
     },
     sitemap: 'https://archive.datasea.id/sitemap.xml',
   }

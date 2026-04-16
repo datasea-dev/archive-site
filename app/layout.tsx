@@ -19,6 +19,12 @@ export const metadata: Metadata = {
   authors: [{ name: "Divisi IT DATASEA" }],
   creator: "DATASEA UTY",
   publisher: "DATASEA UTY",
+  
+  // 🟢 TAMBAHAN: Kode Verifikasi Google Search Console
+  verification: {
+    google: "Nrv4-ypbjYWOz0BanmlSj9sNee4xEvtvhAWbDSPUv2k", // <--- Nanti ganti dengan kode dari dashboard GSC
+  },
+
   robots: {
     index: true,
     follow: true,
@@ -86,7 +92,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         
-        {/* 2. BUNGKUS KONTEN VISUAL DENGAN SECURITY GATE */}
+        {/* BUNGKUS KONTEN VISUAL DENGAN SECURITY GATE */}
         <SecurityGate>
           <Navbar />
 
