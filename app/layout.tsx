@@ -20,9 +20,9 @@ export const metadata: Metadata = {
   creator: "DATASEA UTY",
   publisher: "DATASEA UTY",
   
-  // 🟢 TAMBAHAN: Kode Verifikasi Google Search Console
+  //  Google Search Console
   verification: {
-    google: "Nrv4-ypbjYWOz0BanmlSj9sNee4xEvtvhAWbDSPUv2k",
+    google: "PzG6o5WYeysuUOtYFv9bP3YlGwer0dvrk-vanOq7WKY",
   },
 
   robots: {
