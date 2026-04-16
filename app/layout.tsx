@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar"; 
 import Footer from "@/components/Footer"; 
+import SecurityGate from "@/components/security/SecurityGate"; 
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -85,14 +86,18 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         
-        <Navbar />
+        {/* 2. BUNGKUS KONTEN VISUAL DENGAN SECURITY GATE */}
+        <SecurityGate>
+          <Navbar />
 
-        {/* Konten Utama */}
-        <main className="min-h-screen">
-           {children}
-        </main>
+          {/* Konten Utama */}
+          <main className="min-h-screen">
+             {children}
+          </main>
+          
+          <Footer />
+        </SecurityGate>
         
-        <Footer />
       </body>
     </html>
   );
