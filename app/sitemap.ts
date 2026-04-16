@@ -3,7 +3,7 @@ import { db } from '@/lib/firebase'
 import { collection, getDocs } from 'firebase/firestore'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://archive.datasea.id'
+  const baseUrl = 'https://archive.datasea.my.id'
 
   // 1. Jurnal tetap Dinamis (Karena punya halaman [id])
   let jurnalEntries: MetadataRoute.Sitemap = []

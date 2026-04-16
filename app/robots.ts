@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: ['/admin', '/api', '/private'], 
     },
-    sitemap: 'https://archive.datasea.id/sitemap.xml',
+    sitemap: 'https://archive.my.id/sitemap.xml',
   }
 }
