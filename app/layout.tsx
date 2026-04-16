@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   
   // 🟢 TAMBAHAN: Kode Verifikasi Google Search Console
   verification: {
-    google: "Nrv4-ypbjYWOz0BanmlSj9sNee4xEvtvhAWbDSPUv2k", // <--- Nanti ganti dengan kode dari dashboard GSC
+    google: "Nrv4-ypbjYWOz0BanmlSj9sNee4xEvtvhAWbDSPUv2k",
   },
 
   robots: {
