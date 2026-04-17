@@ -126,7 +126,7 @@ export default function UploadPage() {
       setFormData({ nama: "", nim: "", email: "", judul: "", abstrak: "" });
       setSelectedFile(null);
       setCaptchaToken(null);
-      setIsFormInteracted(false); // Reset interaksi
+      setIsFormInteracted(false); 
 
     } catch (err: any) {
       console.error("Error submit:", err);
@@ -214,7 +214,7 @@ export default function UploadPage() {
                 </div>
             </div>
 
-            {/* --- 4. TURNSTILE CUSTOM UI (HANYA MUNCUL JIKA ADA INTERAKSI) --- */}
+            {/* --- 4. TURNSTILE CUSTOM UI --- */}
             {isFormInteracted && (
               <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 transition-all animate-in fade-in slide-in-from-top-2">
                   <div className="flex items-center gap-3">

@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
-import { collection, query, where, orderBy, getDocs } from "firebase/firestore";
-import { Search, FileText, User, Calendar, ArrowRight } from "lucide-react";
-import Link from "next/link"; // Gunakan Link dari Next.js
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { Search, FileText, User, Calendar, ArrowRight, ShieldCheck } from "lucide-react"; // Tambah ShieldCheck
+import Link from "next/link";
 
 interface Jurnal {
   id: string;
@@ -56,6 +56,7 @@ export default function JurnalPage() {
         </p>
 
         <div className="flex flex-col md:flex-row gap-4 justify-between items-center max-w-5xl mx-auto">
+          {/* Bagian Kiri: Search Bar */}
           <div className="relative w-full md:w-96">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search className="h-5 w-5 text-gray-400" />
@@ -68,9 +69,26 @@ export default function JurnalPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <Link href="/jurnal/upload" className="px-6 py-3 rounded-xl text-white bg-blue-600 hover:bg-blue-700 md:w-auto w-full shadow-lg shadow-blue-500/30 transition-all font-medium">
-            ☁️ Upload Jurnal Saya
-          </Link>
+
+          {/* Bagian Kanan: Tombol Admin & Upload */}
+          <div className="flex flex-row gap-3 w-full md:w-auto">
+            {/* Tombol Admin */}
+            <Link 
+              href="https://archive.datasea.my.id/admin" 
+              className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all font-medium shadow-sm active:scale-95"
+            >
+              <ShieldCheck size={18} className="text-gray-500" /> 
+              <span>Admin</span>
+            </Link>
+
+            {/* Tombol Upload */}
+            <Link 
+              href="/jurnal/upload" 
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition-all font-medium active:scale-95"
+            >
+              <span>☁️ Upload Jurnal Saya</span>
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -93,7 +111,6 @@ export default function JurnalPage() {
                 </div>
                 <p className="text-gray-600 text-sm line-clamp-3 mb-6 flex-1">{item.abstrak}</p>
                 
-                {/* 🔴 INI YANG BERUBAH: Sekarang pakai tag <Link> untuk pindah halaman */}
                 <div className="mt-auto pt-4 border-t border-gray-50">
                   <Link href={`/jurnal/${item.id}`} className="flex items-center justify-center w-full gap-2 px-4 py-2.5 bg-gray-50 text-blue-600 rounded-lg hover:bg-blue-50 font-semibold text-sm transition-all group/btn">
                     Lihat Detail <ArrowRight size={16} className="group-hover/btn:translate-x-1 transition-transform" />

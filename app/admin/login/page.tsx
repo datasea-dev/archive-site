@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signInWithPopup, signOut } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
-import { ShieldCheck, AlertCircle, Loader2, LogIn } from "lucide-react";
+import { ShieldCheck, AlertCircle, Loader2, ArrowLeft } from "lucide-react"; // Tambah ArrowLeft
+import Link from "next/link"; // Tambah Link
 
 export default function LoginPage() {
   const router = useRouter();
@@ -22,14 +23,12 @@ export default function LoginPage() {
       const userEmail = user.email;
 
       // 2. Ambil daftar email yang diizinkan dari Environment Variables
-      // (Bisa string kosong jika variabel belum terbaca)
       const allowedEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(",") || [];
 
       // 3. Validasi Hak Akses Admin
       if (userEmail && allowedEmails.includes(userEmail)) {
         
         // === LOGIKA SESI LENGKAP: Simpan ke localStorage ===
-        // Agar dashboard tetap bisa memanggil nama/email admin
         const sessionData = {
           uid: user.uid,
           email: user.email,
@@ -68,7 +67,18 @@ export default function LoginPage() {
        {/* Background Grid Pattern */}
        <div className="absolute inset-0 -z-10 h-full w-full bg-white bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:4rem_3rem]"></div>
 
-      <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm border border-gray-200 animate-in fade-in zoom-in duration-300">
+      {/* 🟢 TOMBOL KEMBALI FLOATING */}
+      <div className="absolute top-6 left-6 md:top-8 md:left-10 z-10">
+        <Link 
+          href="/jurnal" 
+          className="flex items-center gap-2 px-4 py-2.5 bg-white/80 backdrop-blur-md border border-gray-200 text-gray-600 rounded-full shadow-sm hover:bg-white hover:text-blue-600 hover:shadow-md transition-all active:scale-95"
+        >
+          <ArrowLeft size={18} />
+          <span className="font-semibold text-sm">Kembali</span>
+        </Link>
+      </div>
+
+      <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm border border-gray-200 animate-in fade-in zoom-in duration-300 relative z-10">
         
         {/* Header */}
         <div className="text-center mb-8">
