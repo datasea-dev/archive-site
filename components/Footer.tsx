@@ -107,14 +107,13 @@ export default function Footer() {
                     </a>
                   </li>
                   <li>
-                    <a href="https://uty.ac.id" target="_blank" rel="noopener noreferrer" className="hover:text-white flex items-center gap-2 group">
-                      <ExternalLink size={14} className="text-blue-400 group-hover:text-white transition-colors" /> <span className="truncate">Universitas Teknologi Yogyakarta</span>
+                    <a href="https://uty.ac.id/page/visi-misi-prodi-data-science" target="_blank" rel="noopener noreferrer" className="hover:text-white flex items-center gap-2 group">
+                      <ExternalLink size={14} className="text-blue-400 group-hover:text-white transition-colors" /> <span className="truncate">Website Resmi Sains Data</span>
                     </a>
                   </li>
                   <li>
-                    {/* LINK KOSONG -> ARAH KE 404 */}
-                    <a href="/404" className="hover:text-white flex items-center gap-2 group">
-                      <ExternalLink size={14} className="text-blue-400 group-hover:text-white transition-colors" /> <span className="truncate">Datasea</span>
+                    <a href="https://datasea.my.id" target="_blank" rel="noopener noreferrer" className="hover:text-white flex items-center gap-2 group">
+                      <ExternalLink size={14} className="text-blue-400 group-hover:text-white transition-colors" /> <span className="truncate">Website Resmi Datasea</span>
                     </a>
                   </li>
                 </ul>
@@ -124,10 +123,10 @@ export default function Footer() {
               <div className="hidden sm:block"> 
                  <h3 className="text-[10px] font-bold uppercase tracking-wider text-blue-400 mb-3">Sosial Media</h3>
                  <div className="flex gap-3">
-                   <SocialIcon icon={<Instagram size={18}/>} />
-                   <SocialIcon icon={<Linkedin size={18}/>} />
-                   <SocialIcon icon={<TiktokIcon size={18}/>} />
-                   <SocialIcon icon={<Github size={18}/>} />
+                   <SocialIcon href="https://www.instagram.com/dataseauty/" icon={<Instagram size={18}/>} />
+                   <SocialIcon href="https://www.linkedin.com/company/datasea-uty" icon={<Linkedin size={18}/>} />
+                   <SocialIcon href="https://www.tiktok.com/@dataseauty" icon={<TiktokIcon size={18}/>} />
+                   <SocialIcon href="https://github.com/datasea-dev" icon={<Github size={18}/>} />
                  </div>
               </div>
             </div>
@@ -138,10 +137,10 @@ export default function Footer() {
           <div className="col-span-1 lg:hidden flex justify-between items-center border-t border-white/5 pt-6 mt-2">
               <span className="text-xs font-bold text-blue-300 uppercase">Ikuti Kami</span>
               <div className="flex gap-3">
-                 <SocialIcon icon={<Instagram size={18}/>} />
-                 <SocialIcon icon={<Linkedin size={18}/>} />
-                 <SocialIcon icon={<TiktokIcon size={18}/>} />
-                 <SocialIcon icon={<Github size={18}/>} />
+                 <SocialIcon href="https://www.instagram.com/dataseauty" icon={<Instagram size={18}/>} />
+                 <SocialIcon href="https://www.linkedin.com/company/datasea-uty" icon={<Linkedin size={18}/>} />
+                 <SocialIcon href="https://www.tiktok.com/@dataseauty" icon={<TiktokIcon size={18}/>} />
+                 <SocialIcon href="https://github.com/datasea-dev" icon={<Github size={18}/>} />
               </div>
           </div>
 
@@ -154,7 +153,7 @@ export default function Footer() {
               </p>
               
               <a 
-                href={`https://wa.me/${waNumber}?text=${encodeURIComponent(waMessage)}`}
+                href={`https://wa.me/${6285157399150}?text=${encodeURIComponent("Saya ingin bertaya ?, seputar website archive datasea.")}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-xl transition-all shadow-lg shadow-blue-900/50 group active:scale-95"
@@ -186,12 +185,16 @@ export default function Footer() {
 }
 
 // --- HELPER FUNCTIONS ---
-
-function SocialIcon({ icon }: { icon: React.ReactNode }) {
+function SocialIcon({ icon, href }: { icon: React.ReactNode, href: string }) {
   return (
-    // DISINI SETTINGNYA: Link kosong diarahkan ke 404
-    <Link href="/404" className="p-2 bg-white/5 rounded-lg hover:bg-white/10 text-blue-200 hover:text-white transition-all border border-transparent hover:border-white/20 flex items-center justify-center">
+    <a 
+      href={href} 
+      target="_blank" 
+      rel="noopener noreferrer"
+      className="p-2 bg-white/5 rounded-lg hover:bg-white/10 text-blue-200 hover:text-white transition-all border border-transparent hover:border-white/20 flex items-center justify-center"
+      aria-label="Social Media Link"
+    >
       {icon}
-    </Link>
+    </a>
   );
 }
